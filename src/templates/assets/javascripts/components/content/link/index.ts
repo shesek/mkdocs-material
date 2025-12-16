@@ -172,7 +172,7 @@ export function mountLink(
   if (!(
     feature("navigation.instant.preview") ||
     el.hasAttribute("data-preview")
-  ))
+  ) || el.title.startsWith('#')) // don't override tooltips that use a DOM element for their content
     return EMPTY
 
   // Remove title, as it will overlay the instant preview, and we want to give

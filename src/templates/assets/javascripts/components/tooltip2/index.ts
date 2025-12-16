@@ -60,7 +60,7 @@ import {
   watchElementFocus,
   watchElementHover
 } from "~/browser"
-import { renderInlineTooltip2 } from "~/templates"
+import { renderTooltip2, renderInlineTooltip2 } from "~/templates"
 
 import { Component } from "../_"
 
@@ -354,7 +354,9 @@ export function mountInlineTooltip2(
   return mountTooltip2(el, {
     content$: new Observable<HTMLElement>(observer => {
       const title = el.title
-      const node = renderInlineTooltip2(title)
+      const node = title.startsWith("#")
+        ? renderTooltip2(...(document.getElementById(title.slice(1))!.cloneNode(true) as any).childNodes)
+        : renderInlineTooltip2(title)
       observer.next(node)
       el.removeAttribute("title")
       // Append tooltip and remove on unsubscription
