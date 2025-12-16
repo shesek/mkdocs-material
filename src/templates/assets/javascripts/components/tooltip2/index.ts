@@ -354,7 +354,9 @@ export function mountInlineTooltip2(
   return mountTooltip2(el, {
     content$: new Observable<HTMLElement>(observer => {
       const title = el.title
-      const node = renderInlineTooltip2(title)
+      const node = title[0] == "#"
+        ? renderTooltip2(...document.getElementById(title.substr(1))!.cloneNode(true).children)
+        : renderInlineTooltip2(title)
       observer.next(node)
       el.removeAttribute("title")
       // Append tooltip and remove on unsubscription
