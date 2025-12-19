@@ -171,6 +171,7 @@ export function mountLink(
   //
   if (!(
     feature("navigation.instant.preview") ||
+    localStorage.ENABLE_INSTANT_PREVIEW ||
     el.hasAttribute("data-preview")
   ) || el.title.startsWith('#')) // don't override tooltips that use a DOM element for their content
     return EMPTY
