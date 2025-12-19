@@ -93,17 +93,35 @@ let sequence = 0
 function extract(headline: HTMLElement): HTMLElement[] {
   const newHeading = document.createElement("h3")
   newHeading.innerHTML = headline.innerHTML
-  const els = [newHeading]
 
-  //
-  let nextElement = headline.nextElementSibling
-  while (nextElement && !(nextElement instanceof HTMLHeadingElement)) {
-    // @ts-expect-error - fix once instant previews are stable
-    els.push(nextElement as HTMLElement)
-    nextElement = nextElement.nextElementSibling
+  const els = [ newHeading as HTMLElement, ...nextElements(headline) ]
+
+  // If the headline is actually a bare <a>, collect the elements following its parent too
+  if (headline instanceof HTMLAnchorElement && headline.textContent === "") {
+    els.push(...nextElements(headline.parentElement!))
+  }
+
+  // Customization for mkdocstrings usage in Minsc - if the heading is inside mkdocstring's .doc,
+  // also include any .doc-contents or .doc-signature that follow the .doc parent
+  else if (headline.parentElement?.classList.contains("doc")) {
+    els.push(...nextElements(headline.parentElement, el =>
+      el.classList.contains("doc-contents") || el.classList.contains("doc-signature")))
   }
 
   //
+  return els
+}
+
+function nextElements(
+  baseElement: HTMLElement,
+  predicate: (el: Element) => boolean = (el: Element) => !(el instanceof HTMLHeadingElement || el.classList.contains("doc"))
+): HTMLElement[] {
+  const els = []
+  let nextElement = baseElement.nextElementSibling
+  while (nextElement && predicate(nextElement)) {
+    els.push(nextElement as HTMLElement)
+    nextElement = nextElement.nextElementSibling
+  }
   return els
 }
 
