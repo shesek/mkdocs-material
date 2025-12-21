@@ -191,7 +191,18 @@ export function mountLink(
     feature("navigation.instant.preview") ||
     localStorage.ENABLE_INSTANT_PREVIEW ||
     el.hasAttribute("data-preview")
-  ) || el.title.startsWith('#')) // don't override tooltips that use a DOM element for their content
+  )) return EMPTY
+
+  // Don't show tooltips for the inserted header anchor
+  if (el.innerText == '¶' && el.classList.contains('headerlink'))
+    return EMPTY
+
+  // Don't override tooltips that use a DOM element for their content
+  if (el.title.startsWith('#'))
+    return EMPTY
+
+  // Early return for external links or non-links, so the title attribute isn't removed
+  if (!el.href || new URL(el.href).host !== location.host)
     return EMPTY
 
   // Remove title, as it will overlay the instant preview, and we want to give
