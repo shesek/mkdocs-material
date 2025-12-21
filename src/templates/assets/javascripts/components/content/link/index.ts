@@ -186,6 +186,10 @@ export function mountLink(
   if (!(el instanceof HTMLAnchorElement))
     return EMPTY
 
+  // Only enabled on browsers that support 'hover' state (i.e. non-mobile)
+  if (!window.matchMedia("(hover: hover)").matches)
+    return EMPTY
+
   //
   if (!(
     feature("navigation.instant.preview") ||
