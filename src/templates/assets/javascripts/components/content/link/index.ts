@@ -247,8 +247,11 @@ export function mountLink(
       if (typeof target === "undefined")
         return EMPTY
 
-      //
-      return of(extract(target))
+      const els = extract(target)
+      // If all we have to show is the title element, don't show the tooltip at all
+      if (els.length == 1) return EMPTY
+
+      return of(els)
     })
   )
 
