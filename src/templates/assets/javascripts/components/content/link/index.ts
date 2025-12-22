@@ -197,21 +197,13 @@ export function mountLink(
     el.hasAttribute("data-preview")
   )) return EMPTY
 
-  // Don't show tooltips for the inserted header anchor
-  if (el.innerText == '¶' && el.classList.contains('headerlink'))
-    return EMPTY
-
-  // Don't override tooltips that use a DOM element for their content
-  if (el.title.startsWith('#'))
+  // Don't override links with explicit `title`
+  if (el.title)
     return EMPTY
 
   // Early return for external links or non-links, so the title attribute isn't removed
   if (!el.href || new URL(el.href).host !== location.host)
     return EMPTY
-
-  // Remove title, as it will overlay the instant preview, and we want to give
-  // instant previews precedence over titles – see https://t.ly/o0_Rk
-  el.removeAttribute("title")
 
   const active$ =
     combineLatest([
