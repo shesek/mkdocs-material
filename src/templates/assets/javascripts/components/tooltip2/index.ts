@@ -39,6 +39,7 @@ import {
   map,
   mergeMap,
   observeOn,
+  of,
   queueScheduler,
   share,
   startWith,
@@ -86,6 +87,7 @@ export interface Tooltip {
 interface Dependencies {
   content$: Observable<HTMLElement>    // Tooltip content observable
   viewport$: Observable<Viewport>      // Viewport observable
+  enabled$?: Observable<boolean>       // Tooltip enabled observable
 }
 
 /* ----------------------------------------------------------------------------
@@ -182,7 +184,7 @@ export function watchTooltip2(
 export function mountTooltip2(
   el: HTMLElement, dependencies: Dependencies, timeout = 250
 ): Observable<Component<Tooltip>> {
-  const { content$, viewport$ } = dependencies
+  const { content$, viewport$, enabled$ } = dependencies
 
   // Compute unique tooltip id - this is necessary to associate the tooltip host
   // element with the tooltip element for ARIA purposes
@@ -217,15 +219,19 @@ export function mountTooltip2(
     )
 
     // Compute tooltip presence and visibility - the tooltip should be shown if
-    // the host element or the tooltip itself is focused or hovered
+    // the host element or the tooltip itself is focused or hovered, and enabled
+    const active$ = push$.pipe(map(({ active }) => active))
+    const nodeHover$ = node$.pipe(
+      switchMap(node => watchElementHover(node, 250)),
+      startWith(false)
+    )
+
     combineLatest([
-      push$.pipe(map(({ active }) => active)),
-      node$.pipe(
-        switchMap(node => watchElementHover(node, 250)),
-        startWith(false)
-      )
+      active$,
+      nodeHover$,
+      enabled$ ?? of(true)
     ])
-      .pipe(map(states => states.some(active => active)))
+      .pipe(map(([active, nodeHover, enabled]) => (active || nodeHover) && enabled))
       .subscribe(show$)
 
     // Compute tooltip origin - we need to compute the tooltip origin depending

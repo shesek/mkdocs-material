@@ -26,8 +26,11 @@ import {
   combineLatest,
   distinctUntilChanged,
   filter,
+  fromEvent,
   map,
   of,
+  shareReplay,
+  startWith,
   switchMap,
   zip
 } from "rxjs"
@@ -167,6 +170,27 @@ function resolve(
   return of(document)
 }
 
+/**
+ * Instant preview toggle state
+ */
+const instantPreviewForm = getOptionalElement("[data-md-component=instant-preview-toggle]")
+
+const instantPreviewEnabled$ = !instantPreviewForm ? of(true) :
+    fromEvent(instantPreviewForm, "change").pipe(
+      map(e => (e.target as HTMLInputElement).value === "on"),
+      startWith(__md_get("instant.preview") ?? true),
+      distinctUntilChanged(),
+      shareReplay(1)
+    )
+
+instantPreviewEnabled$.subscribe(enabled => {
+  __md_set("instant.preview", enabled)
+  const onoff =  enabled ? "on" : "off"
+  document.body.dataset.instantPreview = onoff
+  const input = getOptionalElement(`input[name=__instant_preview][value=${onoff}]`)
+  if (input) (input as HTMLInputElement).checked = true
+})
+
 /* ----------------------------------------------------------------------------
  * Functions
  * ------------------------------------------------------------------------- */
@@ -193,7 +217,6 @@ export function mountLink(
   //
   if (!(
     feature("navigation.instant.preview") ||
-    localStorage.ENABLE_INSTANT_PREVIEW ||
     el.hasAttribute("data-preview")
   )) return EMPTY
 
@@ -208,10 +231,11 @@ export function mountLink(
   const active$ =
     combineLatest([
       watchElementFocus(el),
-      watchElementHover(el)
+      watchElementHover(el),
+      instantPreviewEnabled$
     ])
       .pipe(
-        map(([focus, hover]) => focus || hover),
+        map(([focus, hover, enabled]) => (focus || hover) && enabled),
         distinctUntilChanged(),
         filter(active => active)
       )
@@ -264,7 +288,7 @@ export function mountLink(
       })
 
       //
-      return mountTooltip2(el, { content$,  ...dependencies })
+      return mountTooltip2(el, { content$, enabled$: instantPreviewEnabled$, ...dependencies })
     })
   )
 }
